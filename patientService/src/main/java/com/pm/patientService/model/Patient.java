@@ -12,6 +12,7 @@ import java.util.UUID;
 @Entity
 @Setter
 @Getter
+@ToString
 public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

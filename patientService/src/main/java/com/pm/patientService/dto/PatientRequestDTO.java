@@ -31,10 +31,10 @@ public class PatientRequestDTO {
 
 
     @NotNull(message = "Date of birth is required")
-    private LocalDate dateOfBirth;
+    private String dateOfBirth;
 
 
     @NotBlank(groups = CreatePatientValidationGroup.class  , message = "Registered Date is required")
-    private LocalDate registeredDate;
+    private String registeredDate;
 
 }

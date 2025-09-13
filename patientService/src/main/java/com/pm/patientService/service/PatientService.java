@@ -5,9 +5,12 @@ import com.pm.patientService.dto.PatientRequestDTO;
 import com.pm.patientService.dto.PatientResponseDTO;
 import com.pm.patientService.exceptions.EmailAlreadyExistException;
 import com.pm.patientService.exceptions.PatientNotFoundException;
+import com.pm.patientService.grpc.BillingServiceGrpcClient;
+import com.pm.patientService.kafka.KafkaProducer;
 import com.pm.patientService.mapper.PatientMapper;
 import com.pm.patientService.model.Patient;
 import com.pm.patientService.repository.PatientRepository;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
@@ -17,10 +20,15 @@ import java.util.UUID;
 
 @Service
 public class PatientService {
-    private PatientRepository patientRepository;
-
-    public PatientService(PatientRepository patientRepository){
+    private final PatientRepository patientRepository;
+    private final BillingServiceGrpcClient billingServiceGrpcClient;
+    private final KafkaProducer kafkaProducer;
+    public PatientService(PatientRepository patientRepository ,
+                          BillingServiceGrpcClient billingServiceGrpcClient,
+                          KafkaProducer kafkaProducer){
         this.patientRepository = patientRepository;
+        this.billingServiceGrpcClient = billingServiceGrpcClient;
+        this.kafkaProducer = kafkaProducer;
     }
 
 
@@ -44,7 +52,13 @@ public class PatientService {
 
         Patient newPatient = patientRepository.save(PatientMapper.toModel(patientRequestDTO));
 
+        // creating a billing account in the billing service after creating a new patient.
+        billingServiceGrpcClient.createBillingAccount(newPatient.getId().toString(),newPatient.getName(),newPatient.getEmail());
 
+
+
+        // sending an event of patient created !!
+        kafkaProducer.sendEvent(newPatient);
 
 
         return PatientMapper.toDTO(newPatient);
@@ -66,7 +80,7 @@ public class PatientService {
         patient.setName(patientRequestDTO.getName());
         patient.setAddress(patientRequestDTO.getAddress());
         patient.setEmail(patientRequestDTO.getEmail());
-        patient.setDateOfBirth(patientRequestDTO.getDateOfBirth());
+        patient.setDateOfBirth(LocalDate.parse(patientRequestDTO.getDateOfBirth()));
 
 
         Patient udpatedPatient = patientRepository.save(patient);

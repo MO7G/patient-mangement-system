@@ -23,6 +23,8 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final BillingServiceGrpcClient billingServiceGrpcClient;
     private final KafkaProducer kafkaProducer;
+    
+    
     public PatientService(PatientRepository patientRepository ,
                           BillingServiceGrpcClient billingServiceGrpcClient,
                           KafkaProducer kafkaProducer){
@@ -40,6 +42,7 @@ public class PatientService {
 
         return patientResponseDTOs;
     }
+
 
     public PatientResponseDTO createPatient(PatientRequestDTO patientRequestDTO){
         // checking if the email address is unique

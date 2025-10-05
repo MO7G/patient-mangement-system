@@ -7,9 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 @Slf4j
 public class PatientServiceApplication {
-
 	public static void main(String[] args) {
-
 		log.info("🚀 Starting Patient Service Application with NEW CODE!");
 		SpringApplication.run(PatientServiceApplication.class, args);
 	}

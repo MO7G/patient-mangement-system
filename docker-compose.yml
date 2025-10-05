@@ -38,6 +38,21 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
 
+  analytics-service:
+    build: ./analytics-service
+    image: analytics-service:latest
+    container_name: analytics-service
+    ports:
+      - "4002:4002"
+    depends_on:
+      - kafka
+    networks:
+      - internal
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+
+
 
   billing-service:
     build: ./billing-service     # 👈 path to your Dockerfile
@@ -77,6 +92,20 @@ services:
       KAFKA_BROKERCONNECT: "kafka:9092"
     depends_on:
       - kafka
+    networks:
+      - internal
+
+
+  api-gateway-v1:
+    build: ./api-gateway-v1
+    image: api-gateway-v1:latest
+    container_name: api-gateway-v1
+    ports:
+      - "4004:4004"   # Gateway will be available here
+    depends_on:
+      - patient-service
+      - billing-service
+      - analytics-service
     networks:
       - internal
 

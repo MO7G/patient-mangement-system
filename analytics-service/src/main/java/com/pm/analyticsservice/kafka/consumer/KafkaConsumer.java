@@ -1,7 +1,5 @@
 package com.pm.analyticsservice.kafka;
 
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -11,20 +9,18 @@ import patient.events.PatientEvent;
 @Slf4j
 @Service
 public class KafkaConsumer {
-    @KafkaListener(topics="patient", groupId ="analytics-service")
+    @KafkaListener(topics = "patient")
     public void consumeEvent(byte[] event) {
+        log.info("🎯 Received raw Kafka message ({} bytes)", event.length);
+
         try {
             PatientEvent patientEvent = PatientEvent.parseFrom(event);
-            // perform any business related to analytics here
-
-
-
-            log.info("Received Patient Event: {}", patientEvent);
+            log.info("✅ Parsed Patient Event: {}", patientEvent);
         } catch (InvalidProtocolBufferException e) {
-            log.error("Error while parsing patient_created event: {}:{}" , event , e.getMessage());
-            throw new RuntimeException(e);
+            log.error("❌ Error parsing protobuf: {}", e.getMessage());
         }
     }
+
 
 
 

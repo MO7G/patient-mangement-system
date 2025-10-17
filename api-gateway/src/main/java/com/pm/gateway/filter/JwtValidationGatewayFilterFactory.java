@@ -7,6 +7,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
 @Component
 public class JwtValidationGatewayFilterFactory extends AbstractGatewayFilterFactory<Object> {
@@ -18,15 +21,15 @@ public class JwtValidationGatewayFilterFactory extends AbstractGatewayFilterFact
         this.webClient = webClientBuilder.baseUrl(authServiceUrl).build();
     }
 
+
     @Override
     public GatewayFilter apply(Object config) {
         return (exchange, chain) -> {
-            String token =
-                    exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            String token = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-            if(token == null || !token.startsWith("Bearer ")) {
-                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                return exchange.getResponse().setComplete();
+            if (token == null || !token.startsWith("Bearer ")) {
+                // Use ResponseStatusException instead
+                return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or invalid token"));
             }
 
             return webClient.get()
@@ -37,4 +40,6 @@ public class JwtValidationGatewayFilterFactory extends AbstractGatewayFilterFact
                     .then(chain.filter(exchange));
         };
     }
+
+
 }

@@ -1,34 +1,33 @@
 package com.pm.patientService.kafka.producer;
 
-import com.pm.patientService.model.Patient;
+import com.pm.patientService.kafka.producer.handlers.EventHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import patient.events.*;
+
+import java.util.Map;
 
 @Service
 @Slf4j
-public class KafkaProducer {
+public class KafkaEventPublisher {
 
-    private final KafkaTemplate<String, byte[]> kafkaTemplate;
+    private final Map<String, EventHandler> eventHandlers;
 
-    public KafkaProducer(KafkaTemplate<String, byte[]> kafkaTemplate) {
-        this.kafkaTemplate = kafkaTemplate;
+    public KafkaEventPublisher(Map<String, EventHandler> eventHandlers) {
+        this.eventHandlers = eventHandlers;
     }
 
-    public void sendPatientEvent(Patient patient, PatientEventType eventType) {
-        PatientEvent event = PatientEvent.newBuilder()
-                .setPatientId(patient.getId().toString())
-                .setName(patient.getName())
-                .setEmail(patient.getEmail())
-                .setEventType(eventType.name())
-                .build();
+    public void publish(String eventType, Object payload) {
+        EventHandler handler = eventHandlers.get(eventType);
+
+        if (handler == null) {
+            log.warn("⚠️ No handler found for event type: {}", eventType);
+            return;
+        }
 
         try {
-            kafkaTemplate.send("patient", event.toByteArray());
-            log.info("Sent Kafka event: {}", eventType);
+            handler.handle(payload);
         } catch (Exception e) {
-            log.error("Error sending {} event: {}", eventType, e.getMessage());
+            log.error("❌ Error while handling event {}: {}", eventType, e.getMessage(), e);
         }
     }
 }

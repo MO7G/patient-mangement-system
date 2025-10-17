@@ -6,13 +6,12 @@ import com.pm.patientService.dto.PatientResponseDTO;
 import com.pm.patientService.exceptions.EmailAlreadyExistException;
 import com.pm.patientService.exceptions.PatientNotFoundException;
 import com.pm.patientService.grpc.BillingServiceGrpcClient;
-import com.pm.patientService.kafka.KafkaProducer;
+import com.pm.patientService.kafka.producer.KafkaProducer;
+import com.pm.patientService.kafka.producer.publisher.PatientEventPublisher;
 import com.pm.patientService.mapper.PatientMapper;
 import com.pm.patientService.model.Patient;
 import com.pm.patientService.repository.PatientRepository;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,14 +21,17 @@ import java.util.UUID;
 public class PatientService {
     private final PatientRepository patientRepository;
     private final BillingServiceGrpcClient billingServiceGrpcClient;
+    private final PatientEventPublisher patientEventPublisher;
     private final KafkaProducer kafkaProducer;
-    
     
     public PatientService(PatientRepository patientRepository ,
                           BillingServiceGrpcClient billingServiceGrpcClient,
-                          KafkaProducer kafkaProducer){
+                          PatientEventPublisher patientEventPublisher,
+                          KafkaProducer kafkaProducer
+                              ){
         this.patientRepository = patientRepository;
         this.billingServiceGrpcClient = billingServiceGrpcClient;
+        this.patientEventPublisher = patientEventPublisher;
         this.kafkaProducer = kafkaProducer;
     }
 
@@ -61,8 +63,8 @@ public class PatientService {
 
 
         // sending an event of patient created !!
+        //patientEventPublisher.publishPatientCreated(newPatient);
         kafkaProducer.sendEvent(newPatient);
-
 
         return PatientMapper.toDTO(newPatient);
     }
@@ -87,13 +89,9 @@ public class PatientService {
 
 
         Patient udpatedPatient = patientRepository.save(patient);
-
-
         return PatientMapper.toDTO(udpatedPatient);
 
     }
-
-
 
     public void deletePatient(UUID id){
         patientRepository.deleteById(id);

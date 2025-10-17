@@ -16,6 +16,10 @@ WORKDIR /app
 
 COPY --from=builder ./app/target/billing-service-0.0.1-SNAPSHOT.jar ./app.jar
 
+
+# ✅ Set Docker profile here
+ENV SPRING_PROFILES_ACTIVE=docker
+
 EXPOSE 4001
 EXPOSE 9001
 

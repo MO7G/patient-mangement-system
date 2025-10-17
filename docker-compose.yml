@@ -15,6 +15,20 @@ services:
     networks:
       - internal
 
+  auth-service-db:
+    image: postgres:15
+    container_name: auth-service-db
+    environment:
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
+    ports:
+      - "5001:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
   patient-service:
     build: ./patientService
     image: patient-service:latest
@@ -26,15 +40,20 @@ services:
       - kafka
     networks:
       - internal
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://patient-service-db:5432/db
-      SPRING_DATASOURCE_USERNAME: admin_user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_SQL_INIT_MODE: always
-      BILLING_SERVICE_ADDRESS: billing-service
-      BILLING_SERVICE_GRPC_PORT: 9001
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  auth-service:
+    build: ./auth-service
+    image: auth-service:latest
+    container_name: auth-service
+    ports:
+      - "4005:4005"
+    depends_on:
+      - auth-service-db
+      - kafka
+    networks:
+      - internal
+
+
 
   analytics-service:
     build: ./analytics-service
@@ -46,8 +65,7 @@ services:
       - kafka
     networks:
       - internal
-    environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
 
   billing-service:
     build: ./billing-service
@@ -59,28 +77,38 @@ services:
     networks:
       - internal
 
-  kafka:
-    image: apache/kafka:4.0.1-rc2
-    container_name: kafka
-    user: root
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.9.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "9092:9092"
+      - "2181:2181"
     networks:
       - internal
+
+
+  kafka:
+    image: confluentinc/cp-kafka:7.9.0
+    container_name: kafka
+    ports:
+      - "29092:29092"   # host access
+    depends_on:
+      - zookeeper
     environment:
-      KAFKA_KRAFT_MODE: "true"
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: "broker,controller"
-      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LOG_DIRS: /kafka/data
-      KAFKA_METADATA_LOG_DIR: /kafka/kraft-metadata
-    volumes:
-      - kafka_data:/kafka/data
-      - kafka_metadata:/kafka/kraft-metadata
+      KAFKA_BROKER_ID: 1
+      # Internal container network
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - internal
+
+
 
 
 
@@ -95,13 +123,17 @@ services:
       - patient-service
       - billing-service
       - analytics-service
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:4005
     networks:
       - internal
+
 
 volumes:
   patient_db_data:
   kafka_data:
   kafka_metadata:
+  auth_db_data:
 
 networks:
   internal:

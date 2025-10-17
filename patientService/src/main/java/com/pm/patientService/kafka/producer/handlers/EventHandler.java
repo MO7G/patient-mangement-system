@@ -1,4 +1,5 @@
 package com.pm.patientService.kafka.producer.handlers;
 
-public class EventHandler {
+public interface EventHandler {
+    void handle(Object payload);
 }

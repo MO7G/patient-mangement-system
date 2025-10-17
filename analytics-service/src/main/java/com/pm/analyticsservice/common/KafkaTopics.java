@@ -1,4 +1,4 @@
-package com.pm.patientService.common;
+package com.pm.analyticsservice.common;
 
 public final class KafkaTopics {
 
@@ -8,4 +8,5 @@ public final class KafkaTopics {
 
     public static final String PATIENT = "patient";
     public static final String NOTIFICATION = "notification";
+    public static final String ANALYTICS = "analytics";
 }

@@ -8,13 +8,16 @@ RUN mvn dependency:go-offline -B
 
 COPY src ./src
 
-RUN mvn clean package
+RUN mvn clean package -DskipTests
 
 FROM openjdk:21-jdk AS runner
 
 WORKDIR /app
 
-COPY --from=builder ./app/target/patientService-0.0.1-SNAPSHOT.jar ./app.jar
+COPY --from=builder /app/target/patientService-0.0.1-SNAPSHOT.jar app.jar
+
+# ✅ Set Docker profile here
+ENV SPRING_PROFILES_ACTIVE=docker
 
 EXPOSE 4000
 

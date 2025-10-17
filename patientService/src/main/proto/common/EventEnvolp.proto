@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package common.events;
+
+option java_multiple_files = true;
+
+// Generic envelope for all events
+message EventEnvelope {
+  string event_id = 1;          // UUID for this event
+  string correlation_id = 2;    // Optional correlation ID
+  string source = 3;            // Service name, e.g., patient_service
+  string event_type = 4;        // Type of event, e.g., PATIENT_CREATED
+  int64 timestamp = 5;          // Unix epoch millis
+  bytes payload = 6;            // Serialized payload (PatientEvent, NotificationEvent, etc.)
+}

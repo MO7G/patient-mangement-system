@@ -6,13 +6,12 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-FROM openjdk:21-jdk AS runner
+# ✅ Use correct Java 21 runtime base image
+FROM eclipse-temurin:21-jdk AS runner
 
 WORKDIR /app
 COPY --from=builder /app/target/analytics-service-0.0.1-SNAPSHOT.jar app.jar
 
-# ✅ Set Docker profile here
 ENV SPRING_PROFILES_ACTIVE=docker
-
 EXPOSE 4002
 ENTRYPOINT ["java", "-jar", "app.jar"]

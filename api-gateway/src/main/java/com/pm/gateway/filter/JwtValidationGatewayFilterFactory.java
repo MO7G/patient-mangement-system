@@ -27,9 +27,10 @@ public class JwtValidationGatewayFilterFactory extends AbstractGatewayFilterFact
         return (exchange, chain) -> {
             String token = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
+            System.out.println("token: " + token);
             if (token == null || !token.startsWith("Bearer ")) {
-                // Use ResponseStatusException instead
-                return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or invalid token"));
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED); // Set 401
+                return exchange.getResponse().setComplete(); // End the request here
             }
 
             return webClient.get()

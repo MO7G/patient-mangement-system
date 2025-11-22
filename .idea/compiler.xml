@@ -10,6 +10,7 @@
         <module name="api-gateway" />
         <module name="auth-service" />
         <module name="Integeration-tests" />
+        <module name="infrastructure" />
         <module name="billing-service" />
         <module name="patientService" />
       </profile>
